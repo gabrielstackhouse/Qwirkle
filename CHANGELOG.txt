@@ -1,0 +1,10 @@
+----------------------------------------------------------------
+May 31 2017
+
+Modified files: Board.java, Deck.java, Hand.java, Move.java, Qwirkle.java, Tile.java
+
+Log Message:
+	Initial 1.0 release.  Fully playable version of Qwirkle vs. an AI opponent.
+	
+TODO:
+	Add support for placing multiple tiles at once
