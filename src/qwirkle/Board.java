@@ -28,10 +28,30 @@ public class Board {
 		return board;
 	}
 	
+	/**
+	 * Returns tile from board without removing it
+	 * @param x - x parameter
+	 * @param y - y parameter
+	 * @return - tile specified, null if no tile
+	 */
 	public Tile getTile(int x, int y) {
 		if (x < 0 || x >= xMax || y < 0 || y >= xMax)
 			return null;
 		return board[y][x];
+	}
+	
+	/**
+	 * Removes tile from board
+	 * @param x - x parameter
+	 * @param y - y parameter
+	 * @return - tile removed, null if no tile
+	 */
+	public Tile removeTile(int x, int y) {
+		if (x < 0 || x >= xMax || y < 0 || y >= xMax)
+			return null;
+		Tile result = board[y][x];
+		board[y][x] = null;
+		return result;
 	}
 	
 	public char getTileSymbol(int x, int y) {

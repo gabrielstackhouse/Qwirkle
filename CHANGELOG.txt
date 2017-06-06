@@ -1,5 +1,5 @@
 ----------------------------------------------------------------
-May 31 2017
+31 May 2017
 
 Modified files: Board.java, Deck.java, Hand.java, Move.java, Qwirkle.java, Tile.java
 
@@ -8,3 +8,10 @@ Log Message:
 	
 TODO:
 	Add support for placing multiple tiles at once
+----------------------------------------------------------------
+6 June 2017
+
+Modified files: Board.java, Hand.java, Qwirkle.java
+
+Log Message:
+	Fixed a bug where if a tile was selected, you could not return to the main menu

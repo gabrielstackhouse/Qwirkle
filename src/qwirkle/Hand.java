@@ -40,6 +40,21 @@ public class Hand {
 	}
 	
 	/**
+	 * Places a tile on the board in the user's hand
+	 * @param board - the game board
+	 * @param x - x parameter
+	 * @param y - y parameter
+	 * @return - true if successfull, false otherwise
+	 */
+	public boolean addTileFromBoard(Board board, int x, int y) {
+		int index = findEmptySlot();
+		if (handSize == hand.length || index == -1 || board.getTile(x, y) == null)
+			return false;
+		hand[index] = board.removeTile(x, y);
+		return true;
+	}
+	
+	/**
 	 * Fills hand with tiles from deck until either hand is full or deck is empty
 	 * @param deck
 	 */
@@ -52,6 +67,18 @@ public class Hand {
 				handSize++;
 			}
 		}
+	}
+	
+	/**
+	 * Finds first empty slot in hand
+	 * @return index of empty slot, -1 if hand is full
+	 */
+	public int findEmptySlot() {
+		for (int i = 0; i < hand.length; i++) {
+			if (hand[i] == null)
+				return i;
+		}
+		return -1;
 	}
 	
 	/**

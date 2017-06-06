@@ -318,41 +318,98 @@ public class Qwirkle {
 	 */
 	private static boolean playTiles(Terminal terminal, Screen screen, TextGraphics graphics, Hand hand, Board board, int startIndex) throws IOException {
 		
-		//Find index of first tile in hand
-		int min = startIndex;
-		if (min < 0) {
-			min = 0;
-			while (hand.getTile(min) == null) {
-				min++;
-			}
-		}
+		//Initialize variables
+		ArrayList<Move> turn = new ArrayList<Move>();
+		boolean isSpace = false;
 		
-		//Get tile from hand
-		int index = min;
-		setHandCursor(index, hand, graphics);
-		screen.refresh();
-		printMessage(screen, graphics, "Choose tile to play.  Arrow keys + Enter to choose, Esc to go back");
-		KeyStroke key = null;
-		while (key == null || (key.getKeyType() != KeyType.Enter && key.getKeyType() != KeyType.Escape)) {
-			key = terminal.readInput();
-			
-			if (key.getKeyType() == KeyType.ArrowRight && index < hand.getHandLength() - 1) {
-				index = incrementHandCursor(hand, index, 1, null, graphics);
-				screen.refresh();
-			}
-			else if (key.getKeyType() == KeyType.ArrowLeft && index > 0) {
-				index = incrementHandCursor(hand, index, -1, null, graphics);
-				screen.refresh();
+		while (!isSpace) {
+		
+			//Find index of first tile in hand
+			int min = startIndex;
+			if (min < 0) {
+				min = 0;
+				while (hand.getTile(min) == null) {
+					min++;
+				}
 			}
 			
+			//Get tile from hand
+			int index = min;
+			setHandCursor(index, hand, graphics);
+			screen.refresh();
+			printMessage(screen, graphics, "Choose tile to play.  Arrow keys + Enter to choose, Esc to go back");
+			KeyStroke key = null;
+			while (key == null || (key.getKeyType() != KeyType.Enter && key.getKeyType() != KeyType.Escape)) {
+				key = terminal.readInput();
+				
+				if (key.getKeyType() == KeyType.ArrowRight && index < hand.getHandLength() - 1) {
+					index = incrementHandCursor(hand, index, 1, null, graphics);
+					screen.refresh();
+				}
+				else if (key.getKeyType() == KeyType.ArrowLeft && index > 0) {
+					index = incrementHandCursor(hand, index, -1, null, graphics);
+					screen.refresh();
+				}
+				
+			}
+			
+			//If escape is hit, go back to previous
+			if (key.getKeyType() == KeyType.Escape) {
+				if (turn == null || turn.size() == 0)
+					return false;
+				else {
+					Move move = turn.remove(turn.size() - 1);
+					hand.addTileFromBoard(board, move.getX(), move.getY());
+				}
+				continue;
+			}
+			
+			//Choose tile position and place tile
+			
+			//Highlight valid moves
+			ArrayList<Move> moves = null;
+			if (tilesPlaced > 0) {
+				moves = hand.findMoves(index, index, board, tilesPlaced);
+				highlightValidMoves(moves, screen, graphics);
+			}
+			
+			printMessage(screen, graphics, "Place tile on board. Arrow keys + Enter to choose, Esc to go back");
+			key = null;
+			int x = board.getXMax() / 2;
+			int y = board.getYMax() / 2;
+			while (key == null || (key.getKeyType() != KeyType.Enter && key.getKeyType() != KeyType.Escape)) {
+				showMapCursor(x, y, index, hand, screen, graphics);
+				key = terminal.readInput();
+				if (key.getKeyType() == KeyType.ArrowUp && y > 1) 
+					hideMapCursor(x, y--, board, hand, moves, screen, graphics);
+				else if (key.getKeyType() == KeyType.ArrowDown && y < board.getYMax() - 2) 
+					hideMapCursor(x, y++, board, hand, moves, screen, graphics);
+				else if (key.getKeyType() == KeyType.ArrowLeft && x > 1) 
+					hideMapCursor(x--, y, board, hand, moves, screen, graphics);
+				else if (key.getKeyType() == KeyType.ArrowRight && x < board.getXMax() - 2) 
+					hideMapCursor(x++, y, board, hand, moves, screen, graphics);
+				else if (key.getKeyType() == KeyType.Enter && !hand.isValidMove(x, y, hand.getTile(index), board, tilesPlaced)) {
+					printMessage(screen, graphics, "Invalid move. Try again. Arrow keys + Enter to choose, Esc to go back");
+					key = null;
+				}
+			}
+			
+			//Go back if escape is hit
+			if (key.getKeyType() == KeyType.Escape) {
+				hideMapCursor(x, y, board, hand, moves, screen, graphics);
+				unHighlightValidMoves(moves, screen, graphics);
+				startIndex = index;
+				continue;
+			}
+			
+			//Place Tile and increment score
+			board.placeTile(hand.removeTile(index), x, y);
+			turn.add(new Move(hand.getTile(index), index, x, y));
+			tilesPlaced++;
+			hand.addToScore(hand.getMoveScore(x, y, board)); //remove later
+		
+			isSpace = true; //remove later
 		}
-		
-		//If escape is hit, return false
-		if (key.getKeyType() == KeyType.Escape) 
-			return false;
-		
-		//Choose tile position and place tile
-		chooseTilePos(hand, index, board, terminal, screen, graphics);
 
 		//Tile(s) placed successfully
 		return true;
@@ -381,51 +438,6 @@ public class Qwirkle {
 		}
 		
 		return index;
-	}
-	
-	private static void chooseTilePos(Hand hand, int index, Board board, Terminal terminal, Screen screen, TextGraphics graphics) throws IOException {
-		
-		//Highlight valid moves
-		ArrayList<Move> moves = null;
-		if (tilesPlaced > 0) {
-			moves = hand.findMoves(index, index, board, tilesPlaced);
-			highlightValidMoves(moves, screen, graphics);
-		}
-		
-		
-		printMessage(screen, graphics, "Place tile on board. Arrow keys + Enter to choose, Esc to go back");
-		KeyStroke key = null;
-		int x = 40;
-		int y = 10;
-		while (key == null || (key.getKeyType() != KeyType.Enter && key.getKeyType() != KeyType.Escape)) {
-			showMapCursor(x, y, index, hand, screen, graphics);
-			key = terminal.readInput();
-			if (key.getKeyType() == KeyType.ArrowUp && y > 1) 
-				hideMapCursor(x, y--, board, hand, moves, screen, graphics);
-			else if (key.getKeyType() == KeyType.ArrowDown && y < board.getYMax() - 2) 
-				hideMapCursor(x, y++, board, hand, moves, screen, graphics);
-			else if (key.getKeyType() == KeyType.ArrowLeft && x > 1) 
-				hideMapCursor(x--, y, board, hand, moves, screen, graphics);
-			else if (key.getKeyType() == KeyType.ArrowRight && x < board.getXMax() - 2) 
-				hideMapCursor(x++, y, board, hand, moves, screen, graphics);
-			else if (key.getKeyType() == KeyType.Enter && !hand.isValidMove(x, y, hand.getTile(index), board, tilesPlaced)) {
-				printMessage(screen, graphics, "Invalid move. Try again. Arrow keys + Enter to choose, Esc to go back");
-				key = null;
-			}
-		}
-		
-		//Go back if escape is hit
-		if (key.getKeyType() == KeyType.Escape) {
-			hideMapCursor(x, y, board, hand, moves, screen, graphics);
-			unHighlightValidMoves(moves, screen, graphics);
-			playTiles(terminal, screen, graphics, hand, board, index);
-		}
-		
-		//Place Tile and increment score
-		board.placeTile(hand.removeTile(index), x, y);
-		tilesPlaced++;
-		hand.addToScore(hand.getMoveScore(x, y, board));
-		
 	}
 	
 	private static void hideHandCursor(int index, Hand hand, TextGraphics graphics) {
