@@ -13,7 +13,7 @@ For rules on how to play, consult the official rule book: http://upload.snakesan
 
 Versioning
 ----------
-Initial 1.0 release.  Allows the play of one tile at a time (multiple tile support coming in future release).
+Release 1.01.  Fixed a bug with menu navigation.
 
 
 Authors

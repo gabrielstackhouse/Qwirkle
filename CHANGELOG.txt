@@ -15,3 +15,5 @@ Modified files: Board.java, Hand.java, Qwirkle.java
 
 Log Message:
 	Fixed a bug where if a tile was selected, you could not return to the main menu
+	Simplified Qwirkle.java by making often-used variables instance variables, saving having to pass them through methods
+	

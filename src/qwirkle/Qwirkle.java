@@ -21,13 +21,21 @@ public class Qwirkle {
 	private static int tilesPlaced;
 	
 	private static int aiDifficulty;
+	
+	private static Deck deck;
+	private static Board board;
+	private static Hand player;
+	private static Hand computer;
+	private static Screen screen;
+	private static Terminal terminal;
+	private static TextGraphics graphics;
 
 	public static void main(String[] args) throws IOException, InterruptedException {
 		
 		//Initialize Game Screen
-		Terminal terminal = new DefaultTerminalFactory().createTerminal();
-		Screen screen = new TerminalScreen(terminal);
-		TextGraphics graphics = screen.newTextGraphics();
+		terminal = new DefaultTerminalFactory().createTerminal();
+		screen = new TerminalScreen(terminal);
+		graphics = screen.newTextGraphics();
 		screen.startScreen();
 		screen.setCursorPosition(null);
 		graphics.putString(0, 0, "Player Score: ");
@@ -39,17 +47,17 @@ public class Qwirkle {
 		while (run) {
 		
 			//Create game variables
-			Deck deck = new Deck();
-			Board board = new Board();
-			Hand player = new Hand(deck);
-			Hand computer = new Hand(deck);
+			deck = new Deck();
+			board = new Board();
+			player = new Hand(deck);
+			computer = new Hand(deck);
 			int shuffleCount = 0; //we're going to re-shuffle the deck every three turns
 			tilesPlaced = 0;
-			refreshGameBoard(board, player, computer, screen, graphics, deck);
+			refreshGameBoard();
 			
 			//Choose AI difficulty
 			aiDifficulty = 0;
-			printMessage(screen, graphics, "Choose difficulty: [0] Easy, [1] Moderate, [2] Hard");
+			printMessage("Choose difficulty: [0] Easy, [1] Moderate, [2] Hard");
 			boolean isValidKey = false;
 			while (!isValidKey) {
 				KeyStroke key = terminal.readInput();
@@ -62,34 +70,34 @@ public class Qwirkle {
 				}
 				
 				if (!isValidKey)
-					printMessage(screen, graphics, "Try again: [0] Easy, [1] Moderate, [2] Hard");
+					printMessage("Try again: [0] Easy, [1] Moderate, [2] Hard");
 			}
 	
 			//The game loop
 			while (!deck.isEmpty() || (!player.isEmpty() && !computer.isEmpty())) {
-				refreshGameBoard(board, player, computer, screen, graphics, deck);
+				refreshGameBoard();
 				
 				//Perform move based off user's choice
-				char option = playOrSwap(terminal, screen, graphics);
+				char option = playOrSwap();
 				if (option == 'p') {
-					if (!playTiles(terminal, screen, graphics, player, board, -1))
+					if (!playTiles())
 						continue;
 					else
 						player.fillHand(deck);
 				}
-				else if (option == 's' && !deck.isEmpty() && !swapTiles(player, deck, terminal, screen, graphics))
+				else if (option == 's' && !deck.isEmpty() && !swapTiles())
 					continue;
 				else if (deck.isEmpty()) {
-					printMessage(screen , graphics, "No tiles in deck to swap.  Press any key to continue.");
+					printMessage("No tiles in deck to swap.  Press any key to continue.");
 					terminal.readInput();
-					if (!playTiles(terminal, screen, graphics, player, board, -1))
+					if (!playTiles())
 						continue;
 					else
 						player.fillHand(deck);
 				}
 				
 				//Check for game end
-				if (isGameOver(deck, player))
+				if (isGameOver(player))
 					break;
 				
 				Thread.sleep(750);
@@ -113,7 +121,7 @@ public class Qwirkle {
 				}
 				
 				//Check for game end
-				if (isGameOver(deck, computer))
+				if (isGameOver(computer))
 					break;
 				
 				//Shuffle deck every three rounds
@@ -125,20 +133,20 @@ public class Qwirkle {
 				}
 				
 				//Refresh the board
-				refreshGameBoard(board, player, computer, screen, graphics, deck);
+				refreshGameBoard();
 				
 			}
 	
 	
 			//Calculate winner
 			if (player.getScore() > computer.getScore()) {
-				printMessage(screen, graphics, "You win!  Play again? [y]es, [n]o");
+				printMessage("You win!  Play again? [y]es, [n]o");
 			}
 			else if (player.getScore() == computer.getScore()) {
-				printMessage(screen, graphics, "Tie game.  Play again? [y]es, [n]o");
+				printMessage("Tie game.  Play again? [y]es, [n]o");
 			}
 			else
-				printMessage(screen, graphics, "Better luck next time.  Play again? [y]es, [n]o");
+				printMessage("Better luck next time.  Play again? [y]es, [n]o");
 			
 			//Play again?
 			KeyStroke key = null;
@@ -163,7 +171,7 @@ public class Qwirkle {
 	 * @param graphics graphics object
 	 * @throws IOException
 	 */
-	private static void refreshGameBoard(Board board, Hand player, Hand computer, Screen screen, TextGraphics graphics, Deck deck) throws IOException {
+	private static void refreshGameBoard() throws IOException {
 		graphics.setBackgroundColor(TextColor.ANSI.BLACK);
 		for (int i = 0; i < board.getYMax(); i++) {
 			for (int j = 0; j < board.getXMax(); j++) {
@@ -223,7 +231,7 @@ public class Qwirkle {
 	 * @param graphics
 	 * @throws IOException
 	 */
-	private static void highlightValidMoves(ArrayList<Move> moves, Screen screen, TextGraphics graphics) throws IOException {
+	private static void highlightValidMoves(ArrayList<Move> moves) throws IOException {
 		if (aiDifficulty == 2) return; //This is hard mode, you find your own moves!
 		
 		graphics.setForegroundColor(TextColor.ANSI.YELLOW);
@@ -237,7 +245,7 @@ public class Qwirkle {
 		screen.refresh();
 	}
 	
-	private static void unHighlightValidMoves(ArrayList<Move> moves, Screen screen, TextGraphics graphics) throws IOException {
+	private static void unHighlightValidMoves(ArrayList<Move> moves) throws IOException {
 		
 		//Un-highlight moves
 		if (moves != null) {
@@ -257,7 +265,7 @@ public class Qwirkle {
 	 * @param msg message to print
 	 * @throws IOException
 	 */
-	private static void printMessage(Screen screen, TextGraphics graphics, String msg) throws IOException {
+	private static void printMessage(String msg) throws IOException {
 		graphics.setForegroundColor(TextColor.ANSI.WHITE);
 		graphics.setBackgroundColor(TextColor.ANSI.BLACK);
 		graphics.putString(0, 23, "                                                                                        ");
@@ -271,7 +279,7 @@ public class Qwirkle {
 	 * @param hand player who ended the game
 	 * @return
 	 */
-	private static boolean isGameOver(Deck deck, Hand hand) {
+	private static boolean isGameOver(Hand hand) {
 		//Check for game end
 		if (deck.isEmpty() && hand.isEmpty()) {
 			hand.addToScore(6);
@@ -288,8 +296,8 @@ public class Qwirkle {
 	 * @return 'p' to play tiles, 's' to swap them
 	 * @throws IOException
 	 */
-	private static char playOrSwap(Terminal terminal, Screen screen, TextGraphics graphics) throws IOException {
-		printMessage(screen, graphics, "Choose option: [p]lay or [s]wap?");
+	private static char playOrSwap() throws IOException {
+		printMessage("Choose option: [p]lay or [s]wap?");
 		char result = '0'; //Give an initial value to compile
 		boolean isValidKey = false;
 		
@@ -302,7 +310,7 @@ public class Qwirkle {
 			}
 			
 			if (!isValidKey)
-				printMessage(screen, graphics, "Invalid key. Try again: [p]lay or [s]wap?");
+				printMessage("Invalid key. Try again: [p]lay or [s]wap?");
 			
 		}
 		
@@ -316,41 +324,45 @@ public class Qwirkle {
 	 * @param graphics
 	 * @throws IOException
 	 */
-	private static boolean playTiles(Terminal terminal, Screen screen, TextGraphics graphics, Hand hand, Board board, int startIndex) throws IOException {
+	private static boolean playTiles() throws IOException {
 		
 		//Initialize variables
 		ArrayList<Move> turn = new ArrayList<Move>();
 		boolean isSpace = false;
+		int min = -1;
 		
+		//Will continue until space is hit
 		while (!isSpace) {
-		
+			
+			refreshGameBoard();
+			
 			//Find index of first tile in hand
-			int min = startIndex;
 			if (min < 0) {
 				min = 0;
-				while (hand.getTile(min) == null) {
+				while (player.getTile(min) == null) {
 					min++;
 				}
 			}
 			
 			//Get tile from hand
 			int index = min;
-			setHandCursor(index, hand, graphics);
+			setHandCursor(index);
 			screen.refresh();
-			printMessage(screen, graphics, "Choose tile to play.  Arrow keys + Enter to choose, Esc to go back");
+			printMessage("Choose tile to play.  Arrow keys + Enter to choose, Esc to go back");
 			KeyStroke key = null;
-			while (key == null || (key.getKeyType() != KeyType.Enter && key.getKeyType() != KeyType.Escape)) {
+			while (key == null || (key.getKeyType() != KeyType.Enter && key.getKeyType() != KeyType.Escape && !isSpace)) {
 				key = terminal.readInput();
 				
-				if (key.getKeyType() == KeyType.ArrowRight && index < hand.getHandLength() - 1) {
-					index = incrementHandCursor(hand, index, 1, null, graphics);
+				if (key.getKeyType() == KeyType.ArrowRight && index < player.getHandLength() - 1) {
+					index = incrementHandCursor(index, 1, null);
 					screen.refresh();
 				}
 				else if (key.getKeyType() == KeyType.ArrowLeft && index > 0) {
-					index = incrementHandCursor(hand, index, -1, null, graphics);
+					index = incrementHandCursor(index, -1, null);
 					screen.refresh();
 				}
-				
+				else if (key.getKeyType() == KeyType.Character && key.getCharacter() == ' ')
+					isSpace = true;
 			}
 			
 			//If escape is hit, go back to previous
@@ -359,108 +371,110 @@ public class Qwirkle {
 					return false;
 				else {
 					Move move = turn.remove(turn.size() - 1);
-					hand.addTileFromBoard(board, move.getX(), move.getY());
+					player.addTileFromBoard(board, move.getX(), move.getY());
+					tilesPlaced--;
 				}
 				continue;
 			}
 			
 			//Choose tile position and place tile
+			if (!isSpace) {
 			
-			//Highlight valid moves
-			ArrayList<Move> moves = null;
-			if (tilesPlaced > 0) {
-				moves = hand.findMoves(index, index, board, tilesPlaced);
-				highlightValidMoves(moves, screen, graphics);
-			}
-			
-			printMessage(screen, graphics, "Place tile on board. Arrow keys + Enter to choose, Esc to go back");
-			key = null;
-			int x = board.getXMax() / 2;
-			int y = board.getYMax() / 2;
-			while (key == null || (key.getKeyType() != KeyType.Enter && key.getKeyType() != KeyType.Escape)) {
-				showMapCursor(x, y, index, hand, screen, graphics);
-				key = terminal.readInput();
-				if (key.getKeyType() == KeyType.ArrowUp && y > 1) 
-					hideMapCursor(x, y--, board, hand, moves, screen, graphics);
-				else if (key.getKeyType() == KeyType.ArrowDown && y < board.getYMax() - 2) 
-					hideMapCursor(x, y++, board, hand, moves, screen, graphics);
-				else if (key.getKeyType() == KeyType.ArrowLeft && x > 1) 
-					hideMapCursor(x--, y, board, hand, moves, screen, graphics);
-				else if (key.getKeyType() == KeyType.ArrowRight && x < board.getXMax() - 2) 
-					hideMapCursor(x++, y, board, hand, moves, screen, graphics);
-				else if (key.getKeyType() == KeyType.Enter && !hand.isValidMove(x, y, hand.getTile(index), board, tilesPlaced)) {
-					printMessage(screen, graphics, "Invalid move. Try again. Arrow keys + Enter to choose, Esc to go back");
-					key = null;
+				//Highlight valid moves
+				ArrayList<Move> moves = null;
+				if (tilesPlaced > 0) {
+					moves = player.findMoves(index, index, board, tilesPlaced);
+					highlightValidMoves(moves);
 				}
+				
+				printMessage("Place tile on board. Arrow keys + Enter to choose, Esc to go back");
+				key = null;
+				int x = board.getXMax() / 2;
+				int y = board.getYMax() / 2;
+				while (key == null || (key.getKeyType() != KeyType.Enter && key.getKeyType() != KeyType.Escape)) {
+					showMapCursor(x, y, index);
+					key = terminal.readInput();
+					if (key.getKeyType() == KeyType.ArrowUp && y > 1) 
+						hideMapCursor(x, y--, moves);
+					else if (key.getKeyType() == KeyType.ArrowDown && y < board.getYMax() - 2) 
+						hideMapCursor(x, y++, moves);
+					else if (key.getKeyType() == KeyType.ArrowLeft && x > 1) 
+						hideMapCursor(x--, y, moves);
+					else if (key.getKeyType() == KeyType.ArrowRight && x < board.getXMax() - 2) 
+						hideMapCursor(x++, y, moves);
+					else if (key.getKeyType() == KeyType.Enter && !player.isValidMove(x, y, player.getTile(index), board, tilesPlaced)) {
+						printMessage("Invalid move. Try again. Arrow keys + Enter to choose, Esc to go back");
+						key = null;
+					}
+				}
+				
+				//Go back if escape is hit
+				if (key.getKeyType() == KeyType.Escape) {
+					hideMapCursor(x, y, moves);
+					unHighlightValidMoves(moves);
+					min = index;
+					continue;
+				}
+				
+				//Place Tile and increment score
+				board.placeTile(player.removeTile(index), x, y);
+				turn.add(new Move(player.getTile(index), index, x, y));
+				tilesPlaced++;
+				min = -1;
+				player.addToScore(player.getMoveScore(x, y, board)); //remove later
 			}
-			
-			//Go back if escape is hit
-			if (key.getKeyType() == KeyType.Escape) {
-				hideMapCursor(x, y, board, hand, moves, screen, graphics);
-				unHighlightValidMoves(moves, screen, graphics);
-				startIndex = index;
-				continue;
-			}
-			
-			//Place Tile and increment score
-			board.placeTile(hand.removeTile(index), x, y);
-			turn.add(new Move(hand.getTile(index), index, x, y));
-			tilesPlaced++;
-			hand.addToScore(hand.getMoveScore(x, y, board)); //remove later
-		
-			isSpace = true; //remove later
 		}
 
 		//Tile(s) placed successfully
 		return true;
 	}
 	
-	private static int incrementHandCursor(Hand hand, int givenIndex, int dir, boolean[] toSwap, TextGraphics graphics) {
+	private static int incrementHandCursor(int givenIndex, int dir, boolean[] toSwap) {
 		int index = givenIndex;
 		
 		//Skip over null values
 		int increment = dir;
 		boolean isValid = false;
-		while (!isValid && index + increment >= 0 && index + increment < hand.getHandLength()) {
-			if (hand.getTile(index + increment) == null)
+		while (!isValid && index + increment >= 0 && index + increment < player.getHandLength()) {
+			if (player.getTile(index + increment) == null)
 				increment += dir;
 			else
 				isValid = true;
 		}
-		if (index + increment < 0 || index + increment >= hand.getHandLength())
+		if (index + increment < 0 || index + increment >= player.getHandLength())
 			increment = 0;
 		
 		if (increment != 0) {
 			if (toSwap == null || (toSwap != null && toSwap[index] == false)) //Don't hide cursor if set to swap
-				hideHandCursor(index, hand, graphics);
+				hideHandCursor(index);
 			index += increment;
-			setHandCursor(index, hand, graphics);
+			setHandCursor(index);
 		}
 		
 		return index;
 	}
 	
-	private static void hideHandCursor(int index, Hand hand, TextGraphics graphics) {
+	private static void hideHandCursor(int index) {
 		graphics.setBackgroundColor(TextColor.ANSI.BLACK);
-		graphics.setForegroundColor(hand.getTile(index).getTextColor());
-		graphics.setCharacter(35 + (index * 2), 22, hand.getTile(index).getSymbol());
+		graphics.setForegroundColor(player.getTile(index).getTextColor());
+		graphics.setCharacter(35 + (index * 2), 22, player.getTile(index).getSymbol());
 	}
 	
-	private static void setHandCursor(int index, Hand hand, TextGraphics graphics) {
+	private static void setHandCursor(int index) {
 		graphics.setBackgroundColor(TextColor.ANSI.WHITE);
-		graphics.setForegroundColor(hand.getTile(index).getTextColor());
-		graphics.setCharacter(35 + (index * 2), 22, hand.getTile(index).getSymbol());
+		graphics.setForegroundColor(player.getTile(index).getTextColor());
+		graphics.setCharacter(35 + (index * 2), 22, player.getTile(index).getSymbol());
 	}
 	
-	private static void showMapCursor(int x, int y, int index, Hand hand, Screen screen, TextGraphics graphics) throws IOException {
+	private static void showMapCursor(int x, int y, int index) throws IOException {
 		graphics.setBackgroundColor(TextColor.ANSI.WHITE);
-		graphics.setForegroundColor(hand.getTile(index).getTextColor());
-		graphics.setCharacter(x, y+1, hand.getTile(index).getSymbol());
+		graphics.setForegroundColor(player.getTile(index).getTextColor());
+		graphics.setCharacter(x, y+1, player.getTile(index).getSymbol());
 		screen.refresh();
 		
 	}
 	
-	private static void hideMapCursor(int x, int y, Board board, Hand hand, ArrayList<Move> moves, Screen screen, TextGraphics graphics) throws IOException {
+	private static void hideMapCursor(int x, int y, ArrayList<Move> moves) throws IOException {
 		graphics.setBackgroundColor(TextColor.ANSI.BLACK);
 		
 		if (board.getTile(x, y) != null) {
@@ -474,7 +488,7 @@ public class Qwirkle {
 		
 		//Highlight valid moves
 		if (tilesPlaced > 0)
-			highlightValidMoves(moves, screen, graphics);
+			highlightValidMoves(moves);
 		
 	}
 	
@@ -487,36 +501,36 @@ public class Qwirkle {
 	 * @param graphics
 	 * @throws IOException
 	 */
-	private static boolean swapTiles(Hand hand, Deck deck, Terminal terminal, Screen screen, TextGraphics graphics) throws IOException {
+	private static boolean swapTiles() throws IOException {
 		
 		//Initialize toSwap array
-		boolean[] toSwap = new boolean[hand.getHandLength()];
-		for (int i = 0; i < hand.getHandLength(); i++)
+		boolean[] toSwap = new boolean[player.getHandLength()];
+		for (int i = 0; i < player.getHandLength(); i++)
 			toSwap[i] = false;
 		
 		
 		//Find index of first tile in hand
 		int index = 0;
-		while (hand.getTile(index) == null) {
+		while (player.getTile(index) == null) {
 			index++;
 		}
 		
 		//Choose tiles to swap
-		setHandCursor(index, hand, graphics);
+		setHandCursor(index);
 		screen.refresh();
-		printMessage(screen, graphics, "Choose tiles to swap. Arrow keys + Enter to choose, Space to swap, Esc to return");
+		printMessage("Choose tiles to swap. Arrow keys + Enter to choose, Space to swap, Esc to return");
 		KeyStroke key = null;
 		boolean isSpace = false;
 		
 		//Loops until either space or escape is pushed
 		while (key == null || (key.getKeyType() != KeyType.Escape && !isSpace)) {
 			key = terminal.readInput();
-			if (key.getKeyType() == KeyType.ArrowRight && index < hand.getHandLength() - 1) {
-				index = incrementHandCursor(hand, index, 1, toSwap, graphics);
+			if (key.getKeyType() == KeyType.ArrowRight && index < player.getHandLength() - 1) {
+				index = incrementHandCursor(index, 1, toSwap);
 				screen.refresh();
 			}
 			else if (key.getKeyType() == KeyType.ArrowLeft && index > 0) {
-				index = incrementHandCursor(hand, index, -1, toSwap, graphics);
+				index = incrementHandCursor(index, -1, toSwap);
 				screen.refresh();
 			}
 			else if (key.getKeyType() == KeyType.Enter) {
@@ -528,19 +542,19 @@ public class Qwirkle {
 					toSwap[index] = false;
 					graphics.setBackgroundColor(TextColor.ANSI.BLACK);
 				}
-				graphics.setForegroundColor(hand.getTile(index).getTextColor());
-				graphics.setCharacter(35 + (index * 2), 22, hand.getTile(index).getSymbol());
+				graphics.setForegroundColor(player.getTile(index).getTextColor());
+				graphics.setCharacter(35 + (index * 2), 22, player.getTile(index).getSymbol());
 			}
 			else if (key.getKeyType() == KeyType.Character && key.getCharacter() == ' ') {
 				int count = 0;
-				for (int i = 0; i < hand.getHandLength(); i++) {
+				for (int i = 0; i < player.getHandLength(); i++) {
 					if (toSwap[i])
 						count++;
 				}
 				if (count <= deck.getSize())
 					isSpace = true;
 				else
-					printMessage(screen, graphics, "Not enough tiles in deck.  Arrow + Enter to choose, Space to swap, Esc to return");
+					printMessage("Not enough tiles in deck.  Arrow + Enter to choose, Space to swap, Esc to return");
 			}
 		}
 		
@@ -549,12 +563,13 @@ public class Qwirkle {
 			return false;
 		
 		//Swap tiles
-		for (int i = 0; i < hand.getHandLength(); i++) {
+		for (int i = 0; i < player.getHandLength(); i++) {
 			if (toSwap[i])
-				hand.putTileInDeck(deck, i);
+				player.putTileInDeck(deck, i);
 		}
-		hand.fillHand(deck);
-		printMessage(screen, graphics, "Swapped");
+		player.fillHand(deck);
+		refreshGameBoard();
+		printMessage("Swapped");
 		
 		return true;
 		
