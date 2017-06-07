@@ -16,4 +16,14 @@ Modified files: Board.java, Hand.java, Qwirkle.java
 Log Message:
 	Fixed a bug where if a tile was selected, you could not return to the main menu
 	Simplified Qwirkle.java by making often-used variables instance variables, saving having to pass them through methods
+----------------------------------------------------------------
+7 June 2017
+
+Modified files: Qwirkle.java, Hand.java
+
+Log Message:
+	Move is now only considered valid if it is on the same line as all other tiles in that turn
+	In easy mode, AI now places a tile randomly if it's the first move
 	
+TODO:
+	Change scoring method

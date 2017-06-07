@@ -1,5 +1,6 @@
 package qwirkle;
 import java.util.ArrayList;
+import java.util.Random;
 
 public class Hand {
 
@@ -163,12 +164,24 @@ public class Hand {
 	 * @param board game board
 	 * @return true if move is valid, false otherwise
 	 */
-	public boolean isValidMove(int x, int y, Tile tile, Board board, int tilesPlaced) {
+	public boolean isValidMove(int x, int y, Tile tile, Board board, int tilesPlaced, ArrayList<Move> turn) {
 		
+		//Initial checks
 		if (tile == null || x < 1 || x >= board.getXMax() - 1 || y < 1 || y >= board.getYMax() - 1 || board.getTile(x, y) != null)
 			return false;
+	
+		//For each turn, all tiles must be placed on the same line.  Check for this
+		if (turn != null && turn.size() > 1 && turn.get(0) != null && turn.get(1) != null &&
+		    ((turn.get(0).getX() == turn.get(1).getX() && x != turn.get(0).getX()) ||
+			(turn.get(0).getY() == turn.get(1).getY() && y != turn.get(0).getY()))) {
+			return false;
+		}
+		else if (turn != null && turn.size() == 1 && turn.get(0) != null &&
+			    (turn.get(0).getX() != x && turn.get(0).getY() != y)) {
+				return false;
+		}
 		
-		//0 = nothing, 1 = color, 2 = symbol
+		//Check for color or symbol.  0 = nothing, 1 = color, 2 = symbol
 		int xAxis = 0;
 		int yAxis = 0;
 		
@@ -276,7 +289,7 @@ public class Hand {
 	 * @param board game board
 	 * @return ArrayList of moves
 	 */
-	public ArrayList<Move> findMoves(int startIndex, int endIndex, Board board, int tilesPlaced) {
+	public ArrayList<Move> findMoves(int startIndex, int endIndex, Board board, int tilesPlaced, ArrayList<Move> turn) {
 		ArrayList<Move> moves = new ArrayList<Move>();
 		
 		for (int i = startIndex; i < endIndex + 1; i++) {
@@ -284,7 +297,7 @@ public class Hand {
 			for (int y = 1; y < board.getYMax() - 1; y++) {
 				for (int x = 1; x < board.getXMax() - 1; x++) {
 					
-					if (isValidMove(x, y, this.getTile(i), board, tilesPlaced)) {
+					if (isValidMove(x, y, this.getTile(i), board, tilesPlaced, turn)) {
 						int moveScore = getMoveScore(x, y, board);
 						Move move = new Move(this.getTile(i), i, x, y, moveScore);
 						moves.add(move);
@@ -370,10 +383,18 @@ public class Hand {
 	 */
 	public Move aiEasy(Board board, int tilesPlaced) {
 		
+		if (tilesPlaced == 0) {
+			Random rand = new Random();
+			int x = rand.nextInt(board.getXMax() / 2) + (board.getXMax() / 4);
+			int y = rand.nextInt(board.getYMax() / 2) + (board.getYMax() / 4);
+			Move move = new Move(hand[0], 0, x, y, 1);
+			return move;
+		}
+		
 		for (int i = 0; i < hand.length; i++) {
 			for (int y = 1; y < board.getYMax() - 1; y++) {
 				for (int x = 1; x < board.getXMax() - 1; x++) {
-					if (this.isValidMove(x, y, hand[i], board, tilesPlaced)) {
+					if (this.isValidMove(x, y, hand[i], board, tilesPlaced, null)) {
 						int moveScore = getMoveScore(x, y, board);
 						Move move = new Move(hand[i], i, x, y, moveScore);
 						return move;
@@ -398,7 +419,7 @@ public class Hand {
 		for (int i = 0; i < hand.length && count < choices; i++) {
 			for (int y = 1; y < board.getYMax() - 1 && count < choices; y++) {
 				for (int x = 1; x < board.getXMax() - 1 && count < choices; x++) {
-					if (this.isValidMove(x, y, hand[i], board, tilesPlaced)) {
+					if (this.isValidMove(x, y, hand[i], board, tilesPlaced, null)) {
 						int moveScore = getMoveScore(x, y, board);
 						Move move = new Move(hand[i], i, x, y, moveScore);
 						moves[count] = move;
@@ -425,7 +446,7 @@ public class Hand {
 	 */
 	public Move aiHard(Board board, int tilesPlaced) {
 		
-		ArrayList<Move> moves = findMoves(0, 5, board, tilesPlaced);
+		ArrayList<Move> moves = findMoves(0, 5, board, tilesPlaced, null);
 		
 		Move bestMove = moves.get(0);
 		for (int i = 1; i < moves.size(); i++) {

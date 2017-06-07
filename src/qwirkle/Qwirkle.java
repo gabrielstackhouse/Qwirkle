@@ -348,7 +348,7 @@ public class Qwirkle {
 			int index = min;
 			setHandCursor(index);
 			screen.refresh();
-			printMessage("Choose tile to play.  Arrow keys + Enter to choose, Esc to go back");
+			printMessage("Choose tile. Arrow keys + Enter to choose, Esc to go back, Spc when done");
 			KeyStroke key = null;
 			while (key == null || (key.getKeyType() != KeyType.Enter && key.getKeyType() != KeyType.Escape && !isSpace)) {
 				key = terminal.readInput();
@@ -368,7 +368,7 @@ public class Qwirkle {
 			//If escape is hit, go back to previous
 			if (key.getKeyType() == KeyType.Escape) {
 				if (turn == null || turn.size() == 0)
-					return false;
+					return false; //Kicks us back out to choosing to play or swap tiles
 				else {
 					Move move = turn.remove(turn.size() - 1);
 					player.addTileFromBoard(board, move.getX(), move.getY());
@@ -383,7 +383,7 @@ public class Qwirkle {
 				//Highlight valid moves
 				ArrayList<Move> moves = null;
 				if (tilesPlaced > 0) {
-					moves = player.findMoves(index, index, board, tilesPlaced);
+					moves = player.findMoves(index, index, board, tilesPlaced, turn);
 					highlightValidMoves(moves);
 				}
 				
@@ -402,7 +402,7 @@ public class Qwirkle {
 						hideMapCursor(x--, y, moves);
 					else if (key.getKeyType() == KeyType.ArrowRight && x < board.getXMax() - 2) 
 						hideMapCursor(x++, y, moves);
-					else if (key.getKeyType() == KeyType.Enter && !player.isValidMove(x, y, player.getTile(index), board, tilesPlaced)) {
+					else if (key.getKeyType() == KeyType.Enter && !player.isValidMove(x, y, player.getTile(index), board, tilesPlaced, turn)) {
 						printMessage("Invalid move. Try again. Arrow keys + Enter to choose, Esc to go back");
 						key = null;
 					}
