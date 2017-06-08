@@ -11,7 +11,6 @@ public class Move {
 	private int tileIndex;
 	private int x;
 	private int y;
-	private int score;
 	
 	/**
 	 * 
@@ -25,15 +24,6 @@ public class Move {
 		this.tileIndex = tileIndex;
 		this.x = x;
 		this.y = y;
-		score = -1;
-	}
-	
-	public Move(Tile tile, int tileIndex, int x, int y, int score) {
-		this.tile = tile;
-		this.tileIndex = tileIndex;
-		this.x = x;
-		this.y = y;
-		this.score = score;
 	}
 	
 	public Tile getTile() {
@@ -50,14 +40,6 @@ public class Move {
 	
 	public int getY() {
 		return y;
-	}
-	
-	public int getScore() {
-		return score;
-	}
-	
-	public void setScore(int score) {
-		this.score = score;
 	}
 	
 }

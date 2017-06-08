@@ -27,3 +27,15 @@ Log Message:
 	
 TODO:
 	Change scoring method
+----------------------------------------------------------------
+8 June 2017
+
+Modified files: Qwirkle.java, Hand.java, Move.java
+
+Log Message:
+	User is now being scored correctly in placing multiple tiles at once
+	Temporarily removed Medium and Hard difficulties, to be rewritten to place more than one tile per turn
+	
+TODO:
+	Fix AI scoring
+	Rewrite medium and hard difficulties

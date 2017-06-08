@@ -22,6 +22,8 @@ public class Qwirkle {
 	
 	private static int aiDifficulty;
 	
+	private static boolean qwirkle;
+	
 	private static Deck deck;
 	private static Board board;
 	private static Hand player;
@@ -53,6 +55,7 @@ public class Qwirkle {
 			computer = new Hand(deck);
 			int shuffleCount = 0; //we're going to re-shuffle the deck every three turns
 			tilesPlaced = 0;
+			qwirkle = false;
 			refreshGameBoard();
 			
 			//Choose AI difficulty
@@ -96,6 +99,12 @@ public class Qwirkle {
 						player.fillHand(deck);
 				}
 				
+				if (qwirkle) {
+					printMessage("Qwirkle!");
+					Thread.sleep(1000);
+					qwirkle = false;
+				}
+				
 				//Check for game end
 				if (isGameOver(player))
 					break;
@@ -106,17 +115,17 @@ public class Qwirkle {
 				//	Difficulty
 				Move aiMove = null;
 				if (aiDifficulty == 0)
-					aiMove = computer.aiEasy(board, tilesPlaced);
-				else if (aiDifficulty == 1)
-					aiMove = computer.aiModerate(board, tilesPlaced);
-				else 
-					aiMove = computer.aiHard(board, tilesPlaced);
+					aiMove = computer.aiEasy(board, tilesPlaced).get(0);
+//				else if (aiDifficulty == 1)
+//					aiMove = computer.aiModerate(board, tilesPlaced);
+//				else 
+//					aiMove = computer.aiHard(board, tilesPlaced);
 				
 				//Place Tile
 				if (aiMove != null) {
 					board.placeTile(computer.removeTile(aiMove.getIndex()), aiMove.getX(), aiMove.getY());
 					tilesPlaced++;
-					computer.addToScore(aiMove.getScore());
+//					computer.addToScore(aiMove.getScore());  //Fix AI scoring method
 					computer.addTileFromDeck(deck);
 				}
 				
@@ -416,16 +425,16 @@ public class Qwirkle {
 					continue;
 				}
 				
-				//Place Tile and increment score
+				//Place Tile
 				board.placeTile(player.removeTile(index), x, y);
 				turn.add(new Move(player.getTile(index), index, x, y));
 				tilesPlaced++;
 				min = -1;
-				player.addToScore(player.getMoveScore(x, y, board)); //remove later
 			}
 		}
 
 		//Tile(s) placed successfully
+		player.addToScore(getTurnScore(turn));
 		return true;
 	}
 	
@@ -574,4 +583,122 @@ public class Qwirkle {
 		return true;
 		
 	}
+	
+	private static int getTurnScore(ArrayList<Move> turn) {
+	
+		int score = 0;
+		
+		//Calculate the line all tiles match
+		boolean xAxis = false;
+		boolean yAxis = false;
+		int i;
+		int x = turn.get(0).getX();
+		int y = turn.get(0).getY();
+		if (turn.size() > 1 && turn.get(0) != null && turn.get(1) != null && turn.get(0).getX() == turn.get(1).getX()) {
+			int lineScore = 1;
+			
+			//Check Up
+			for (i = 1; i < 6 && y - i >= 0 && board.getTile(x, y - i) != null; i++)
+				lineScore++;
+			
+			//Check Down
+			for (i = 1; i < 6 && y + i < board.getYMax() && board.getTile(x, y + i) != null; i++)
+				lineScore++;
+			
+			//Check for Qwirkle
+			if (lineScore == 6) {
+				qwirkle = true;
+				lineScore += 6;
+			}
+			
+			score += lineScore;
+			yAxis = true;
+			
+		}
+		else if (turn.size() > 1 && turn.get(0) != null && turn.get(1) != null && turn.get(0).getY() == turn.get(1).getY()) {
+			int lineScore = 1;
+			
+			//Check Right
+			for (i = 1; i < 6 && x + i < board.getXMax() && board.getTile(x + i, y) != null; i++)
+				lineScore++;
+			
+			//Check Left
+			for (i = 1; i < 6 && x - i >= 0 && board.getTile(x - i, y) != null; i++)
+				lineScore++;
+			
+			//Check for Qwirkle
+			if (lineScore == 6) {
+				qwirkle = true;
+				lineScore += 6;
+			}
+			
+			score += lineScore;
+			xAxis = true;
+		}
+		
+		
+		//Now, individually check if tiles match on the other axis
+		for (int turnIndex = 0; turnIndex < turn.size(); turnIndex++) {
+			x = turn.get(turnIndex).getX();
+			y = turn.get(turnIndex).getY();
+			
+			if (!xAxis) {
+				int lineScore = 0;
+				
+				//Check Right
+				for (i = 1; i < 6 && x + i < board.getXMax() && board.getTile(x + i, y) != null; i++)
+					lineScore++;
+				
+				//Check Left
+				for (i = 1; i < 6 && x - i >= 0 && board.getTile(x - i, y) != null; i++)
+					lineScore++;
+				
+				//Count original tile if there are others
+				if (lineScore > 0)
+					lineScore++;
+				
+				//Check for Qwirkle
+				if (lineScore == 6) {
+					qwirkle = true;
+					lineScore += 6;
+				}
+				
+				score += lineScore;
+				
+			}
+			else if (!yAxis) {
+				int lineScore = 0;
+				
+				//Check Up
+				for (i = 1; i < 6 && y - i >= 0 && board.getTile(x, y - i) != null; i++)
+					lineScore++;
+				
+				//Check Down
+				for (i = 1; i < 6 && y + i < board.getYMax() && board.getTile(x, y + i) != null; i++)
+					lineScore++;
+				
+				//Count original tile if there are others
+				if (lineScore > 0)
+					lineScore++;
+				
+				//Check for Qwirkle
+				if (lineScore == 6) {
+					qwirkle = true;
+					lineScore += 6;
+				}
+				
+				score += lineScore;
+				
+			}
+			
+		}
+
+		//If tile is by itself, score 1
+		if (turn.size() == 1 && score == 0)
+			return 1;
+		
+		return score;
+	}
+	
+	
 }

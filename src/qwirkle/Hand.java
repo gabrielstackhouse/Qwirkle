@@ -178,7 +178,7 @@ public class Hand {
 		}
 		else if (turn != null && turn.size() == 1 && turn.get(0) != null &&
 			    (turn.get(0).getX() != x && turn.get(0).getY() != y)) {
-				return false;
+			return false;
 		}
 		
 		//Check for color or symbol.  0 = nothing, 1 = color, 2 = symbol
@@ -298,8 +298,7 @@ public class Hand {
 				for (int x = 1; x < board.getXMax() - 1; x++) {
 					
 					if (isValidMove(x, y, this.getTile(i), board, tilesPlaced, turn)) {
-						int moveScore = getMoveScore(x, y, board);
-						Move move = new Move(this.getTile(i), i, x, y, moveScore);
+						Move move = new Move(this.getTile(i), i, x, y);
 						moves.add(move);
 					}
 				}
@@ -310,94 +309,31 @@ public class Hand {
 	}
 	
 	/**
-	 * Returns the score of the move (assume move is valid)
-	 * @param x x position of where the tile is to be placed
-	 * @param y y position of where the tile is to be placed
-	 * @param tile the tile to be placed
-	 * @param board the game board
-	 * @return score of move, 0 if invalid
-	 */
-	public int getMoveScore(int x, int y, Board board) {
-		int score = 0;
-		
-		//Check Left
-		int i;
-		int line = 0;
-		for (i = 1; i < 6; i++) {
-			if (x - i < 0 || board.getTile(x-i, y) == null)
-				break;
-			line++;
-		}
-		
-		//Check Right
-		for (i = 1; i < 6; i++) {
-			if (x + i >= board.getXMax() || board.getTile(x+i, y) == null)
-				break;
-			line++;
-		}
-		score += calculateLine(line);
-		
-		//Check Up
-		line = 0;
-		for (i = 1; i < 6; i++) {
-			if (y - i < 0 || board.getTile(x, y-i) == null)
-				break;
-			line++;
-		}
-		
-		//Check Down
-		for (i = 1; i < 6; i++) {
-			if (y + i >= board.getYMax() || board.getTile(x, y+i) == null)
-				break;
-			line++;
-		}
-		score += calculateLine(line);
-		
-		//TODO --take multiple tiles per move into account
-		
-		if (score == 0)
-			score += 1;
-
-		return score;
-	}
-	
-	private int calculateLine(int line) {
-		int lineScore = line;
-		
-		if (lineScore == 0)
-			return 0;
-		else
-			lineScore += 1;
-		
-		if (lineScore == 6)
-			lineScore += 6;
-		
-		return lineScore;
-	}
-	
-	/**
 	 * Returns first move detected, regardless of score.  Null if none found.
 	 * @param board
 	 * @param tilesPlaced
 	 * @return move, null if no possible moves
 	 */
-	public Move aiEasy(Board board, int tilesPlaced) {
+	public ArrayList<Move> aiEasy(Board board, int tilesPlaced) {
+		
+		ArrayList<Move> turn = new ArrayList<Move>();
 		
 		if (tilesPlaced == 0) {
 			Random rand = new Random();
 			int x = rand.nextInt(board.getXMax() / 2) + (board.getXMax() / 4);
 			int y = rand.nextInt(board.getYMax() / 2) + (board.getYMax() / 4);
-			Move move = new Move(hand[0], 0, x, y, 1);
-			return move;
+			Move move = new Move(hand[0], 0, x, y);
+			turn.add(move);
+			return turn;
 		}
 		
 		for (int i = 0; i < hand.length; i++) {
 			for (int y = 1; y < board.getYMax() - 1; y++) {
 				for (int x = 1; x < board.getXMax() - 1; x++) {
 					if (this.isValidMove(x, y, hand[i], board, tilesPlaced, null)) {
-						int moveScore = getMoveScore(x, y, board);
-						Move move = new Move(hand[i], i, x, y, moveScore);
-						return move;
+						Move move = new Move(hand[i], i, x, y);
+						turn.add(move);
+						return turn;
 					}	
 				}
 			}
@@ -405,56 +341,56 @@ public class Hand {
 		return null;
 	}
 	
-	/**
-	 * Finds three moves, then returns the highest scoring one
-	 * @param board
-	 * @param tilesPlaced
-	 * @return move, null if no possible moves
-	 */
-	public Move aiModerate(Board board, int tilesPlaced) {
-		
-		int count = 0;
-		int choices = 3;
-		Move[] moves = new Move[3];
-		for (int i = 0; i < hand.length && count < choices; i++) {
-			for (int y = 1; y < board.getYMax() - 1 && count < choices; y++) {
-				for (int x = 1; x < board.getXMax() - 1 && count < choices; x++) {
-					if (this.isValidMove(x, y, hand[i], board, tilesPlaced, null)) {
-						int moveScore = getMoveScore(x, y, board);
-						Move move = new Move(hand[i], i, x, y, moveScore);
-						moves[count] = move;
-						count++;
-					}	
-				}
-			}
-		}
-		
-		Move bestMove = moves[0];
-		for (int i = 1; i < choices; i++) {
-			if (moves[i] != null && moves[i].getScore() > bestMove.getScore())
-				bestMove = moves[i];
-		}
-		
-		return bestMove;
-	}
+//	/**
+//	 * Finds three moves, then returns the highest scoring one
+//	 * @param board
+//	 * @param tilesPlaced
+//	 * @return move, null if no possible moves
+//	 */
+//	public Move aiModerate(Board board, int tilesPlaced) {
+//		
+//		int count = 0;
+//		int choices = 3;
+//		Move[] moves = new Move[3];
+//		for (int i = 0; i < hand.length && count < choices; i++) {
+//			for (int y = 1; y < board.getYMax() - 1 && count < choices; y++) {
+//				for (int x = 1; x < board.getXMax() - 1 && count < choices; x++) {
+//					if (this.isValidMove(x, y, hand[i], board, tilesPlaced, null)) {
+//						int moveScore = getMoveScore(x, y, board);
+//						Move move = new Move(hand[i], i, x, y, moveScore);
+//						moves[count] = move;
+//						count++;
+//					}	
+//				}
+//			}
+//		}
+//		
+//		Move bestMove = moves[0];
+//		for (int i = 1; i < choices; i++) {
+//			if (moves[i] != null && moves[i].getScore() > bestMove.getScore())
+//				bestMove = moves[i];
+//		}
+//		
+//		return bestMove;
+//	}
 	
-	/**
-	 * Finds all possible moves and chooses the best of them
-	 * @param board the game board
-	 * @param tilesPlaced number of tiles placed
-	 * @return best possible move, null if none possible
-	 */
-	public Move aiHard(Board board, int tilesPlaced) {
-		
-		ArrayList<Move> moves = findMoves(0, 5, board, tilesPlaced, null);
-		
-		Move bestMove = moves.get(0);
-		for (int i = 1; i < moves.size(); i++) {
-			if (moves.get(i).getScore() > bestMove.getScore())
-				bestMove = moves.get(i);
-		}
-		
-		return bestMove;
-	}
-	
+//	/**
+//	 * Finds all possible moves and chooses the best of them
+//	 * @param board the game board
+//	 * @param tilesPlaced number of tiles placed
+//	 * @return best possible move, null if none possible
+//	 */
+//	public Move aiHard(Board board, int tilesPlaced) {
+//		
+//		ArrayList<Move> moves = findMoves(0, 5, board, tilesPlaced, null);
+//		
+//		Move bestMove = moves.get(0);
+//		for (int i = 1; i < moves.size(); i++) {
+//			if (moves.get(i).getScore() > bestMove.getScore())
+//				bestMove = moves.get(i);
+//		}
+//		
+//		return bestMove;
+//	}
+//	
 }
