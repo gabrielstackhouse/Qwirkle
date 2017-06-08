@@ -324,6 +324,7 @@ public class Hand {
 			int y = rand.nextInt(board.getYMax() / 2) + (board.getYMax() / 4);
 			Move move = new Move(hand[0], 0, x, y);
 			turn.add(move);
+//			aiPlaceTiles(board, turn);
 			return turn;
 		}
 		
@@ -333,6 +334,7 @@ public class Hand {
 					if (this.isValidMove(x, y, hand[i], board, tilesPlaced, null)) {
 						Move move = new Move(hand[i], i, x, y);
 						turn.add(move);
+//						aiPlaceTiles(board, turn);
 						return turn;
 					}	
 				}
@@ -393,4 +395,12 @@ public class Hand {
 //		return bestMove;
 //	}
 //	
+	
+	public boolean aiPlaceTiles(Board board, ArrayList<Move> turn) {
+		if (turn == null || turn.size() == 0)
+			return false;
+		for (int i = 0; i < turn.size(); i++) 
+			board.placeTile(turn.get(i).getTile(), turn.get(i).getX(), turn.get(i).getY());
+		return true;
+	}
 }

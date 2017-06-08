@@ -113,21 +113,18 @@ public class Qwirkle {
 				
 				//AI makes move
 				//	Difficulty
-				Move aiMove = null;
+				ArrayList<Move> turn = new ArrayList<Move>();
 				if (aiDifficulty == 0)
-					aiMove = computer.aiEasy(board, tilesPlaced).get(0);
+					turn = computer.aiEasy(board, tilesPlaced);
 //				else if (aiDifficulty == 1)
 //					aiMove = computer.aiModerate(board, tilesPlaced);
 //				else 
 //					aiMove = computer.aiHard(board, tilesPlaced);
 				
-				//Place Tile
-				if (aiMove != null) {
-					board.placeTile(computer.removeTile(aiMove.getIndex()), aiMove.getX(), aiMove.getY());
-					tilesPlaced++;
-//					computer.addToScore(aiMove.getScore());  //Fix AI scoring method
-					computer.addTileFromDeck(deck);
-				}
+				//Increment AI score
+				computer.aiPlaceTiles(board, turn);
+				refreshGameBoard();
+				computer.addToScore(getTurnScore(turn));
 				
 				//Check for game end
 				if (isGameOver(computer))
@@ -586,6 +583,9 @@ public class Qwirkle {
 	
 	private static int getTurnScore(ArrayList<Move> turn) {
 	
+		if (turn == null || turn.size() == 0)
+			return 0;
+		
 		int score = 0;
 		
 		//Calculate the line all tiles match
@@ -666,7 +666,8 @@ public class Qwirkle {
 				score += lineScore;
 				
 			}
-			else if (!yAxis) {
+			
+			if (!yAxis) {
 				int lineScore = 0;
 				
 				//Check Up
